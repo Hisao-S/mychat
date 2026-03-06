@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>社内チャット</title>
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        #messages { border: 1px solid #ccc; height: 300px; overflow-y: scroll; margin-bottom: 10px; padding: 10px; background: #f9f9f9; }
+        input { padding: 5px; width: 250px; }
+        button { padding: 5px 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>社内チャット</h2>
+    <div id="messages"></div>
+    <input id="myMessage" type="text" placeholder="メッセージを入力...">
+    <button onclick="sendMessage()">送信</button>
+
+    <script>
+        var socket = io();
+
+        // 通知の許可を求める
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+
+        // メッセージ受信
+        socket.on('message', function(msg) {
+            var item = document.createElement('div');
+            item.textContent = msg;
+            document.getElementById('messages').appendChild(item);
+            
+            // 下までスクロール
+            var obj = document.getElementById('messages');
+            obj.scrollTop = obj.scrollHeight;
+
+            // ブラウザが隠れている時に通知
+            if (document.hidden && Notification.permission === "granted") {
+                new Notification("新着メッセージ", { body: msg });
+            }
+        });
+
+        // 送信関数
+        function sendMessage() {
+            var input = document.getElementById('myMessage');
+            if (input.value) {
+                socket.send(input.value);
+                input.value = '';
+            }
+        }
+
+        // Enterキーでも送信できるようにする
+        document.getElementById('myMessage').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
