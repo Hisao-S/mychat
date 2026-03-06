@@ -4,6 +4,20 @@ from flask_socketio import SocketIO, send, emit
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
+
+# 修正：DATABASE_URLの読み込みと変換を確実に行う
+database_url = os.environ.get("DATABASE_URL")
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# 以下、Messageクラスなどの続きはそのまま
+
+app = Flask(__name__)
 # データベースとの接続設定
 uri = os.environ.get("DATABASE_URL")
 if uri and uri.startswith("postgres://"):
@@ -45,4 +59,5 @@ if __name__ == "__main__":
         db.create_all()  # 初回にテーブルを作成
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host='0.0.0.0', port=port)
+
 
