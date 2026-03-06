@@ -48,5 +48,7 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
     
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    # Renderの指定するポート(10000)を確実に取得し、なければ5000を使う
+    port = int(os.environ.get("PORT", 10000))
+    # 外部からの接続を許可するために 0.0.0.0 で起動
+    socketio.run(app, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
