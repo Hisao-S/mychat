@@ -1,3 +1,11 @@
+import eventlet
+eventlet.monkey_patch()
+
+import os
+from flask import Flask, render_template
+# ...（以下は今のコードのままでOKです）
+
+
 import os
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -43,3 +51,4 @@ with app.app_context():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
