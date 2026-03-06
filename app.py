@@ -1,11 +1,10 @@
 import os
-from flask import Flask, render_template
-from flask_socketio import SocketIO, send, emit
+from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-# RenderのデータベースURLを取得
+# データベース設定
 uri = os.environ.get("DATABASE_URL")
 if uri and uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
@@ -14,41 +13,33 @@ app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# データベースのテーブル定義
+# データベースの保存形式
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.String(500), nullable=False)
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
-
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    # データベースから過去ログを取得
+    if request.method == 'POST':
+        msg_content = request.form.get('content')
+        if msg_content:
+            new_message = Message(content=msg_content)
+            db.session.add(new_message)
+            db.session.commit()
+        return redirect(url_for('index'))
+    
     messages = Message.query.all()
     return render_template('index.html', messages=messages)
 
-@socketio.on('message')
-def handle_message(msg):
-    new_message = Message(content=msg)
-    db.session.add(new_message)
-    db.session.commit()
-    send(msg, broadcast=True)
-
-@socketio.on('clear_history')
-def handle_clear():
+@app.route('/clear', methods=['POST'])
+def clear():
     Message.query.delete()
     db.session.commit()
-    emit('history_cleared', broadcast=True)
+    return redirect(url_for('index'))
 
-# ここが最重要：サーバー起動前に「必ず」テーブルを作る
 with app.app_context():
     db.create_all()
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-    
-    # Renderの指定するポート(10000)を確実に取得し、なければ5000を使う
     port = int(os.environ.get("PORT", 10000))
-    # 外部からの接続を許可するために 0.0.0.0 で起動
-    socketio.run(app, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
+    app.run(host='0.0.0.0', port=port)
