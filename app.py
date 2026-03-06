@@ -19,7 +19,7 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.String(500), nullable=False)
 
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 @app.route('/')
 def index():
@@ -49,5 +49,4 @@ if __name__ == "__main__":
         db.create_all()
     
     port = int(os.environ.get("PORT", 5000))
-    # 修正ポイント：allow_unsafe_werkzeug を True にするか、単純な socketio.run にする
-    socketio.run(app, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
+    app.run(host='0.0.0.0', port=port)
