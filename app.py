@@ -5,7 +5,10 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 # データベースとの接続設定
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+uri = os.environ.get("DATABASE_URL")
+if uri and uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -42,3 +45,4 @@ if __name__ == "__main__":
         db.create_all()  # 初回にテーブルを作成
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host='0.0.0.0', port=port)
+
