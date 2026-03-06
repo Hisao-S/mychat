@@ -1,59 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>社内チャット</title>
-    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <title>Office Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socketio/4.0.1/socketio.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 20px; }
-        #messages { border: 1px solid #ccc; height: 300px; overflow-y: scroll; margin-bottom: 10px; padding: 10px; background: #f9f9f9; }
-        input { padding: 5px; width: 250px; }
-        button { padding: 5px 15px; cursor: pointer; }
+        body { font-family: sans-serif; margin: 20px; background-color: #f0f2f5; }
+        #messages { border: 1px solid #ccc; height: 350px; overflow-y: scroll; padding: 15px; margin-bottom: 10px; background: white; border-radius: 8px; }
+        input { padding: 12px; width: 65%; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 12px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .clear-btn { background-color: #dc3545; color: white; border: none; margin-top: 20px; cursor: pointer; padding: 10px; border-radius: 4px; font-size: 0.8em; }
     </style>
 </head>
 <body>
-    <h2>社内チャット</h2>
-    <div id="messages"></div>
-    <input id="myMessage" type="text" placeholder="メッセージを入力...">
-    <button onclick="sendMessage()">送信</button>
+    <h3>My Custom Chat</h3>
+    <div id="messages">
+        {% for msg in messages %}
+            <div>{{ msg.content }}</div>
+        {% endfor %}
+    </div>
+    <input id="input" autocomplete="off" placeholder="メッセージを入力..."><button onclick="sendMessage()">送信</button>
+    <br>
+    <button class="clear-btn" onclick="clearHistory()">履歴をすべてクリア</button>
 
     <script>
         var socket = io();
 
-        // 通知の許可を求める
-        if (Notification.permission !== "granted") {
-            Notification.requestPermission();
-        }
-
-        // メッセージ受信
-        socket.on('message', function(msg) {
-            var item = document.createElement('div');
-            item.textContent = msg;
-            document.getElementById('messages').appendChild(item);
-            
-            // 下までスクロール
-            var obj = document.getElementById('messages');
-            obj.scrollTop = obj.scrollHeight;
-
-            // ブラウザが隠れている時に通知
-            if (document.hidden && Notification.permission === "granted") {
-                new Notification("新着メッセージ", { body: msg });
-            }
-        });
-
-        // 送信関数
         function sendMessage() {
-            var input = document.getElementById('myMessage');
-            if (input.value) {
+            var input = document.getElementById('input');
+            if(input.value) {
                 socket.send(input.value);
                 input.value = '';
             }
         }
 
-        // Enterキーでも送信できるようにする
-        document.getElementById('myMessage').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                sendMessage();
+        socket.on('message', function(msg) {
+            var item = document.createElement('div');
+            item.textContent = msg;
+            document.getElementById('messages').appendChild(item);
+            // 自動で一番下までスクロール
+            var msgDiv = document.getElementById('messages');
+            msgDiv.scrollTop = msgDiv.scrollHeight;
+        });
+
+        function clearHistory() {
+            if (confirm('保存されている履歴をすべて消去しますか？')) {
+                socket.emit('clear_history');
             }
+        }
+
+        socket.on('history_cleared', function() {
+            document.getElementById('messages').innerHTML = '';
+            alert('サーバーの履歴をクリアしました');
         });
     </script>
 </body>
