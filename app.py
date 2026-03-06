@@ -48,16 +48,13 @@ def handle_message(msg):
     send(msg, broadcast=True)
 
 @socketio.on('clear_history')
-def handle_clear():
-    # 履歴をすべて削除
-    Message.query.delete()
-    db.session.commit()
-    emit('history_cleared', broadcast=True)
-
+# 既存の handle_clear 関数の下あたりから書き換え
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()  # 初回にテーブルを作成
+        # ここで「保存箱（テーブル）」を強制的に作成します
+        db.create_all()
+        print("Database tables created!") 
+
     port = int(os.environ.get("PORT", 5000))
+    # eventletを使用してサーバーを起動
     socketio.run(app, host='0.0.0.0', port=port)
-
-
